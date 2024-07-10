@@ -1,0 +1,698 @@
+# 第一步：数据准备
+Wine（葡萄酒）数据集是一个经典的机器学习数据集，用于分类任务。这个数据集是由美国加州大学欧文分校的计算机科学系的许多年前收集的。该数据集由13个特征组成，描述了三个不同种类的葡萄酒。这三个类别分别是不同来源的葡萄酒，通常被标记为类别0、1和2。
+
+这个数据一共有178行（代表有178个样本）,14 列（代表有13个特征+1列是标签）
+## 数据读取
+import pandas as pd
+
+#读取数据为dataframe格式
+df = pd.read_csv('wine_data.csv')
+# 查看数据的前几行，默认显示前5行
+df.head()
+## 数据探索
+# 显示数据集的形状，即数据集中样本的数量和特征的数量。从结果可以看出，这个数据一共有178行（代表有178个样本）,14 列（代表有13个特征+1列是标签）
+df.shape
+#也可以看出，一共有三类
+df["target"].unique()
+# 显示数据集中数值型特征的统计摘要，包括均值、标准差、最小值、25%分位数、中位数、75%分位数和最大值。
+df.describe()
+## 划分训练集和测试集
+# 数据集中包含特征和目标变量，要把他们划分开
+
+# 特征矩阵，不包含目标变量。df中去除target列以外的列就是特征。
+X = df.drop('target', axis=1) 
+
+# df的target列是目标变量
+y = df['target']
+ # 导入train_test_split函数，用于划分训练集和测试集
+from sklearn.model_selection import train_test_split 
+
+
+#划分训练集和测试集，将数据集分为训练集（80%）和测试集（20%）
+# test_size=0.2 这个参数就代表20%的样本做测试集
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# 模型训练
+ # 导入准确率和分类报告指标
+from sklearn.metrics import accuracy_score, classification_report 
+
+## 逻辑回归 （Logistic Regression，LR）
+### 先训练一遍模型
+from sklearn.linear_model import LogisticRegression  # 导入LogisticRegression模型
+
+# 初始化逻辑回归模型
+model = LogisticRegression()
+
+# 在训练集上训练模型
+model.fit(X_train, y_train)
+
+# 在测试集上进行预测
+y_pred = model.predict(X_test)
+
+# 计算模型准确率
+# y_test: 这是测试集的真实标签
+# y_pred: 这是刚才逻辑回归模型对测试集中每个样本的预测类别。
+# 将真实标签 y_test和 模型预测类别 y_pred 输入到从sklearn中导入的accuracy_score函数中，计算准确率。
+accuracy = accuracy_score(y_test, y_pred)
+print("逻辑回归模型准确率：", accuracy)
+
+# 打印分类报告，包括精确率、召回率、F1分数等指标
+print("\n逻辑回归分类报告：")
+print(classification_report(y_test, y_pred))
+### 结果分析(后同）
+* 精确率（Precision）：
+    * 类别0（第一类葡萄酒）的精确率为1.00，表示在所有被模型预测为第一类葡萄酒的样本中，有100%确实属于第一类葡萄酒。
+    * 类别1（第二类葡萄酒）的精确率为0.93，表示在所有被模型预测为第二类葡萄酒的样本中，有93%确实属于第二类葡萄酒。
+    * 类别2（第三类葡萄酒）的精确率为1.00，表示在所有被模型预测为第三类葡萄酒的样本中，有100%确实属于第三类葡萄酒。
+    * 在三个类别中，模型的精确率都相对较高，这说明模型对每个类别的分类都比较准确。
+* 召回率（Recall）：
+    * 类别0的召回率为0.93，表示在所有实际为第一类葡萄酒的样本中，有93%被模型正确地预测为第一类葡萄酒。
+    * 类别1的召回率为1.00，表示在所有实际为第二类葡萄酒的样本中，有100%被模型正确地预测为第二类葡萄酒。
+    * 类别2的召回率为1.00，表示在所有实际为第三类葡萄酒的样本中，有100%被模型正确地预测为第三类葡萄酒。
+    * 模型对于第二类和第三类葡萄酒的召回率都达到了100%，说明模型能够很好地捕捉到这两个类别的样本。
+* F1分数（F1-score）：
+    * F1分数是精确率和召回率的调和平均值，综合考虑了模型的分类准确度和漏报率。
+    * 三个类别的F1分数都比较高，说明模型在各个类别上的性能都比较均衡。
+* 支持数（Support）：
+    * 支持数表示每个类别在测试集中的样本数量。在这个报告中，每个类别的支持数分别为14、14和8。
+* 准确率（Accuracy）：
+    * 准确率是模型在所有预测中正确预测的比例，计算公式为：(TP + TN) / (TP + TN + FP + FN)。
+    * 这个模型的准确率为0.97，说明模型在测试集上的整体性能比较好。
+
+## 决策树（Decision Tree，DT）
+### 先训练一遍模型
+from sklearn.tree import DecisionTreeClassifier
+
+# 决策树模型
+# 可以调整的参数有：
+    # max_depth: 决策树的最大深度，用于控制树的复杂度。默认值：None，还可以试试 10, 15。限制max_depth，可以防止模型在训练集上过度学习。
+    # min_samples_split: 节点分裂的最小样本数，也就是限制节点再划分所需的最小样本数，用于控制过拟合，默认值：2。增加min_samples_split，可以防止模型过于复杂，提高泛化能力。
+    # min_samples_leaf: 默认值：1，叶子节点的最小样本数，用于控制过拟合，可以尝试2, 5, 10等。增加min_samples_leaf，可以防止模型对训练数据中的噪声过于敏感。
+# 大家可以试试换一下这些参数后，对最后的预测结果有什么影响
+
+
+
+dt_model = DecisionTreeClassifier(max_depth=5, min_samples_split=2, min_samples_leaf=2)
+
+# 在训练集上训练决策树模型
+dt_model.fit(X_train, y_train)
+
+# 用刚才训练好的名字叫dt_model的决策树模型，在测试集上进行预测
+y_pred = dt_model.predict(X_test)
+
+
+# 计算模型准确率
+# y_test: 这是测试集的真实标签
+# y_pred: 这是刚才决策树模型对测试集中每个样本的预测类别。
+# 将真实标签 y_test和 模型预测类别 y_pred 输入到从sklearn中导入的accuracy_score函数中，计算准确率。
+# 也就是说，计算准确率，不用自己写代码，调用这个accuracy_score函数就可以了
+accuracy = accuracy_score(y_test, y_pred)
+print("决策树模型准确率：", accuracy)
+
+# 打印分类报告，包括精确率、召回率、F1分数等指标
+print("\n决策树分类报告：")
+print(classification_report(y_test, y_pred))
+
+
+### 十折交叉验证
+k折交叉验证（k-fold cross-validation）：
+
+将数据集均匀地划分成k个子集，每个子集都有机会作为测试集，其余作为训练集。然后看K次的平均值和方差以衡量模型在k折交叉验证中的整体性能和稳定性。
+
+一般来说K=10或者5,这里用K=10
+
+
+from sklearn.model_selection import cross_val_score
+import matplotlib.pyplot as plt
+
+# 定义 决策树 模型
+dt_model = DecisionTreeClassifier(max_depth=5, min_samples_split=2, min_samples_leaf=1)
+
+# 进行十折交叉验证，返回十个验证准确率的数组
+cross_val_scores = cross_val_score(dt_model, X_train, y_train, cv=10)
+
+# 定义 X 轴的数据，即交叉验证的折数
+x_values = range(1, 11)
+
+# 绘制折线图
+plt.figure(figsize=(8, 6))
+plt.plot(x_values, cross_val_scores, marker='o', linestyle='-')
+plt.xlabel('Fold')
+plt.ylabel('Accuracy')
+plt.title('Cross Validation Scores')
+plt.xticks(x_values)
+plt.grid(True)
+plt.show()
+print("这十次的准确率分别是：\n",cross_val_scores)
+print("这十次的准确率的均值是：\n",cross_val_scores.mean())
+## 注意
+
+可以看到如下图中的结果，每一次训练，换用不同的子集作为训练集，所得到的‘准确率”（纵轴），是有波动的。虽然第一次达到了100%的准确率，但是第三次就不是了。因此，不能因为看到了一个机器学习模型，在一个训练集上训练达到了100%的准确率，就认为这个机器学习模型是完美的，因为这里有一些“巧合”的成分。我们应该关注的是，在不用的训练集上，准确率都比较高的模型，比如，看十次的准确率的均值最高的模型。
+## 随机森林（Random Forest，RF）
+### 先训练一遍模型
+from sklearn.ensemble import RandomForestClassifier
+
+# 随机森林模型
+# 可以调整的参数有：
+#     n_estimators: 随机森林中树的数量，增加数量可以提高模型的稳定性和性能。默认值：100。
+#     max_depth: 决策树的最大深度，用于控制树的复杂度。
+#     min_samples_split: 节点分裂的最小样本数，用于控制过拟合。
+#     min_samples_leaf: 叶子节点的最小样本数，用于控制过拟合。
+
+
+# 大家可以试试换一下这些参数后，对最后的预测结果有什么影响
+rf_model = RandomForestClassifier(n_estimators=100, max_depth=None, min_samples_split=2, min_samples_leaf=1)
+# 在训练集上训练随机森林模型
+rf_model.fit(X_train, y_train)
+
+# 用刚才训练好的名字叫rf_model的随机森林模型，在测试集上进行预测
+rf_y_pred = rf_model.predict(X_test)
+
+# 计算模型准确率
+rf_accuracy = accuracy_score(y_test, rf_y_pred)
+print("随机森林模型准确率：", rf_accuracy)
+
+# 打印分类报告，包括精确率、召回率、F1分数等指标
+print("\n随机森林分类报告：")
+print(classification_report(y_test, rf_y_pred))
+！！！可以看到 随机森林的各个指标都达到了 100%,说明这个方法表现优异！
+# 可以打印预测值rf_y_pred和真实值y_test，看看是不是一样的
+print("rf_y_pred",rf_y_pred)
+print("y_test",y_test.values)
+### 十折交叉验证
+
+from sklearn.model_selection import cross_val_score
+import matplotlib.pyplot as plt
+
+# 定义 随机森林 模型
+rf_model = RandomForestClassifier(n_estimators=100, max_depth=None, min_samples_split=2, min_samples_leaf=1)
+
+# 进行十折交叉验证，返回十个验证准确率的数组
+cross_val_scores = cross_val_score(rf_model, X_train, y_train, cv=10)
+
+# 定义 X 轴的数据，即交叉验证的折数
+x_values = range(1, 11)
+
+# 绘制折线图
+plt.figure(figsize=(8, 6))
+plt.plot(x_values, cross_val_scores, marker='o', linestyle='-')
+plt.xlabel('Fold')
+plt.ylabel('Accuracy')
+plt.title('Cross Validation Scores')
+plt.xticks(x_values)
+plt.grid(True)
+plt.show()
+print("这十次的准确率分别是：\n",cross_val_scores)
+print("这十次的准确率的均值是：\n",cross_val_scores.mean())
+# 可以看出的是随机森林在十次的效果上都不错，效果比较稳定，这是一个好模型。
+## 支持向量机（Support Vector Machine，SVM）
+### 先训练一遍模型
+from sklearn.svm import SVC
+# 支持向量机模型
+# 可以调整的参数有：
+# C:正则化参数，默认值 1.0。
+# 控制决策边界的软硬程度。C越大，决策边界越硬，容错性越低。
+# 较小的C值（例如0.1）可以增加模型容错性，较大的C值（例如10）可以减小容错性。
+# kernel:核函数的选择，决定数据映射到高维空间的方式，常用的有线性核、多项式核和径向基核（RBF）。
+# 'linear'线性核适用于线性可分的情况，'rbf'适用于非线性可分的情况。
+
+
+svm_model = SVC(C=1, kernel='rbf')
+
+# 在训练集上训练支持向量机模型
+svm_model.fit(X_train, y_train)
+
+# 用刚才训练好的名字叫svm_model的svm模型，在测试集上进行预测
+svm_y_pred = svm_model.predict(X_test)
+
+svm_accuracy = accuracy_score(y_test, svm_y_pred)
+print("\n支持向量机模型准确率：", svm_accuracy)
+print("\n支持向量机分类报告：")
+print(classification_report(y_test, svm_y_pred))
+### 十折交叉验证
+
+from sklearn.model_selection import cross_val_score
+import matplotlib.pyplot as plt
+
+# 定义 svm 模型
+svm_model = SVC(C=1, kernel='rbf')
+
+# 进行十折交叉验证，返回十个验证准确率的数组
+cross_val_scores = cross_val_score(svm_model, X_train, y_train, cv=10)
+
+# 定义 X 轴的数据，即交叉验证的折数
+x_values = range(1, 11)
+
+# 绘制折线图
+plt.figure(figsize=(8, 6))
+plt.plot(x_values, cross_val_scores, marker='o', linestyle='-')
+plt.xlabel('Fold')
+plt.ylabel('Accuracy')
+plt.title('Cross Validation Scores')
+plt.xticks(x_values)
+plt.grid(True)
+plt.show()
+print("这十次的准确率分别是：\n",cross_val_scores)
+print("这十次的准确率的均值是：\n",cross_val_scores.mean())
+## KNN（K-Nearest Neighbors，KNN）
+### 先训练一遍模型
+from sklearn.neighbors import KNeighborsClassifier
+
+# K最近邻模型
+# 可以调整的参数有：
+#     n_neighbors: 选择最近邻的数量。
+#     weights: 设置邻居的权重，可以是uniform（所有邻居权重相同）或distance（距离越近的邻居权重越大）。
+
+knn_model = KNeighborsClassifier(n_neighbors=5, weights='uniform')
+knn_model.fit(X_train, y_train)
+knn_y_pred = knn_model.predict(X_test)
+knn_accuracy = accuracy_score(y_test, knn_y_pred)
+print("\nK最近邻模型准确率：", knn_accuracy)
+print("\nK最近邻模型分类报告：")
+print(classification_report(y_test, knn_y_pred))
+### 十折交叉验证
+
+from sklearn.model_selection import cross_val_score
+import matplotlib.pyplot as plt
+
+# 定义 KNN 模型
+knn_model = KNeighborsClassifier(n_neighbors=5, weights='uniform')
+
+
+# 进行十折交叉验证，返回十个验证准确率的数组
+cross_val_scores = cross_val_score(knn_model, X_train, y_train, cv=10)
+
+# 定义 X 轴的数据，即交叉验证的折数
+x_values = range(1, 11)
+
+# 绘制折线图
+plt.figure(figsize=(8, 6))
+plt.plot(x_values, cross_val_scores, marker='o', linestyle='-')
+plt.xlabel('Fold')
+plt.ylabel('Accuracy')
+plt.title('Cross Validation Scores')
+plt.xticks(x_values)
+plt.grid(True)
+plt.show()
+print("这十次的准确率分别是：\n",cross_val_scores)
+print("这十次的准确率的均值是：\n",cross_val_scores.mean())
+可以看到KNN的效果非常不好
+## 朴素贝叶斯（Naive Bayes Classifier，NB）
+### 先训练一遍模型
+from sklearn.naive_bayes import GaussianNB
+
+# 朴素贝叶斯模型
+nb_model = GaussianNB()
+
+# 在训练集上训练朴素贝叶斯模型
+nb_model.fit(X_train, y_train)
+
+# 用训练好的朴素贝叶斯模型在测试集上进行预测
+nb_y_pred = nb_model.predict(X_test)
+
+# 计算模型准确率
+nb_accuracy = accuracy_score(y_test, nb_y_pred)
+print("朴素贝叶斯模型准确率：", nb_accuracy)
+print("\n朴素贝叶斯模型分类报告：")
+print(classification_report(y_test, nb_y_pred))
+
+### 十折交叉验证
+
+from sklearn.model_selection import cross_val_score
+import matplotlib.pyplot as plt
+
+# 定义 nb 模型
+nb_model = GaussianNB()
+
+
+# 进行十折交叉验证，返回十个验证准确率的数组
+cross_val_scores = cross_val_score(nb_model, X_train, y_train, cv=10)
+
+# 定义 X 轴的数据，即交叉验证的折数
+x_values = range(1, 11)
+
+# 绘制折线图
+plt.figure(figsize=(8, 6))
+plt.plot(x_values, cross_val_scores, marker='o', linestyle='-')
+plt.xlabel('Fold')
+plt.ylabel('Accuracy')
+plt.title('Cross Validation Scores')
+plt.xticks(x_values)
+plt.grid(True)
+plt.show()
+print("这十次的准确率分别是：\n",cross_val_scores)
+print("这十次的准确率的均值是：\n",cross_val_scores.mean())
+## 梯度提升树（Gradient Boosting Trees，GBT）
+### 先训练一遍模型
+from sklearn.ensemble import GradientBoostingClassifier
+
+# 梯度提升模型
+# 可以调整的参数有：
+#     learning_rate: 学习率，默认值：0.1。控制每次迭代的步长，也就是控制每次迭代的权重更新幅度。越小学的越精细，但时间也会更长。可以再试试0.001
+#     n_estimators: 提升树的数量。默认值：100。调参思路：可以从较小的值开始，例如50，以加快模型训练。再逐步增加，找到一个合适的数量，避免过拟合。
+#     max_depth: 每棵树的最大深度，默认值：3，尝试不同的深度值，可以调整模型的复杂度（越深越复杂），避免过拟合或者欠拟合。
+gb_model = GradientBoostingClassifier(learning_rate=0.1, n_estimators=100, max_depth=3)
+
+# 在训练集上训练梯度提升模型
+gb_model.fit(X_train, y_train)
+
+# 用训练好的梯度提升模型在测试集上进行预测
+gb_y_pred = gb_model.predict(X_test)
+
+# 计算模型准确率
+gb_accuracy = accuracy_score(y_test, gb_y_pred)
+print("梯度提升模型准确率：", gb_accuracy)
+print("\n分类报告：")
+print(classification_report(y_test, gb_y_pred))
+
+### 十折交叉验证
+
+from sklearn.model_selection import cross_val_score
+import matplotlib.pyplot as plt
+
+# 定义 gbt 模型
+gb_model = GradientBoostingClassifier(learning_rate=0.1, n_estimators=100, max_depth=3)
+
+# 进行十折交叉验证，返回十个验证准确率的数组
+cross_val_scores = cross_val_score(gb_model, X_train, y_train, cv=10)
+
+# 定义 X 轴的数据，即交叉验证的折数
+x_values = range(1, 11)
+
+# 绘制折线图
+plt.figure(figsize=(8, 6))
+plt.plot(x_values, cross_val_scores, marker='o', linestyle='-')
+plt.xlabel('Fold')
+plt.ylabel('Accuracy')
+plt.title('Cross Validation Scores')
+plt.xticks(x_values)
+plt.grid(True)
+plt.show()
+print("这十次的准确率分别是：\n",cross_val_scores)
+print("这十次的准确率的均值是：\n",cross_val_scores.mean())
+## 多层感知机模型（Multilayer Perceptron,MLP）
+### 先训练一遍模型
+from sklearn.neural_network import MLPClassifier
+
+# 多层感知机模型（MLP）
+# 可以调整的参数有：
+#     hidden_layer_sizes: 隐藏层的大小。
+#     activation: 激活函数的类型，如'relu'、'logistic'、'tanh'等。
+#     solver: 优化算法的选择，如'adam'、'sgd'等。
+#     max_iter:用于指定训练模型的最大迭代次数。当模型达到指定的最大迭代次数后，即使模型尚未收敛，训练也会停止。
+mlp_model = MLPClassifier(hidden_layer_sizes=(100,), activation='relu', solver='adam', max_iter=1000)
+
+# 在训练集上训练多层感知机模型
+mlp_model.fit(X_train, y_train)
+
+# 用训练好的多层感知机模型在测试集上进行预测
+mlp_y_pred = mlp_model.predict(X_test)
+
+# 计算模型准确率
+mlp_accuracy = accuracy_score(y_test, mlp_y_pred)
+print("多层感知机模型准确率：", mlp_accuracy)
+print("\n多层感知机分类报告：")
+print(classification_report(y_test, mlp_y_pred))
+
+
+from sklearn.model_selection import cross_val_score
+import matplotlib.pyplot as plt
+
+# 定义 MLP 模型
+mlp_model = MLPClassifier(hidden_layer_sizes=(100,), activation='relu', solver='adam', max_iter=1000)
+
+# 进行十折交叉验证，返回十个验证准确率的数组
+cross_val_scores = cross_val_score(mlp_model, X_train, y_train, cv=10)
+
+# 定义 X 轴的数据，即交叉验证的折数
+x_values = range(1, 11)
+
+# 绘制折线图
+plt.figure(figsize=(8, 6))
+plt.plot(x_values, cross_val_scores, marker='o', linestyle='-')
+plt.xlabel('Fold')
+plt.ylabel('Accuracy')
+plt.title('Cross Validation Scores')
+plt.xticks(x_values)
+plt.grid(True)
+plt.show()
+print("这十次的准确率分别是：\n",cross_val_scores)
+print("这十次的准确率的均值是：\n",cross_val_scores.mean())
+## AdaBoost
+### 先训练一遍模型
+from sklearn.ensemble import AdaBoostClassifier
+
+# AdaBoost 模型
+# 可以调整的参数有：
+#     base_estimator: 基础估计器，可以是决策树、神经网络等。
+#     n_estimators: 弱学习器的数量。
+#     learning_rate: 学习率，用于控制每个弱学习器的权重更新幅度。
+adaboost_model = AdaBoostClassifier(base_estimator=None, n_estimators=50, learning_rate=1.0)
+
+# 在训练集上训练 AdaBoost 模型
+adaboost_model.fit(X_train, y_train)
+
+# 用训练好的 AdaBoost 模型在测试集上进行预测
+adaboost_y_pred = adaboost_model.predict(X_test)
+
+# 计算模型准确率
+adaboost_accuracy = accuracy_score(y_test, adaboost_y_pred)
+print("AdaBoost 模型准确率：", adaboost_accuracy)
+print("\nAdaBoost 分类报告：")
+print(classification_report(y_test, adaboost_y_pred))
+
+### 十折交叉验证
+
+from sklearn.model_selection import cross_val_score
+import matplotlib.pyplot as plt
+
+# 定义 adaboost_model 模型
+adaboost_model = AdaBoostClassifier(base_estimator=None, n_estimators=50, learning_rate=1.0)
+
+# 进行十折交叉验证，返回十个验证准确率的数组
+cross_val_scores = cross_val_score(adaboost_model, X_train, y_train, cv=10)
+
+# 定义 X 轴的数据，即交叉验证的折数
+x_values = range(1, 11)
+
+# 绘制折线图
+plt.figure(figsize=(8, 6))
+plt.plot(x_values, cross_val_scores, marker='o', linestyle='-')
+plt.xlabel('Fold')
+plt.ylabel('Accuracy')
+plt.title('Cross Validation Scores')
+plt.xticks(x_values)
+plt.grid(True)
+plt.show()
+print("这十次的准确率分别是：\n",cross_val_scores)
+print("这十次的准确率的均值是：\n",cross_val_scores.mean())
+## XGboost
+### 先训练一遍模型
+import xgboost as xgb
+
+# XGBoost 模型
+# 可以调整的参数有：
+#     max_depth: 树的最大深度。
+#     learning_rate: 学习率，用于控制每次迭代的步长。
+#     n_estimators: 树的数量，也就是迭代次数。
+#     objective: 损失函数的选择，常见的有'binary:logistic'（二分类）和'multi:softmax'（多分类）等。
+#     eval_metric: 评估指标的选择，例如'error'、'logloss'等。
+xgboost_model = xgb.XGBClassifier(max_depth=3, learning_rate=0.1, n_estimators=100, objective='multi:softmax')
+
+# 在训练集上训练 XGBoost 模型
+xgboost_model.fit(X_train, y_train)
+
+# 用训练好的 XGBoost 模型在测试集上进行预测
+xgboost_y_pred = xgboost_model.predict(X_test)
+
+# 计算模型准确率
+xgboost_accuracy = accuracy_score(y_test, xgboost_y_pred)
+print("XGBoost 模型准确率：", xgboost_accuracy)
+print("\nXGBoost分类报告：")
+print(classification_report(y_test, xgboost_y_pred))
+
+### 十折交叉验证
+
+
+from sklearn.model_selection import cross_val_score
+import matplotlib.pyplot as plt
+
+# 定义 XGBoost 模型
+xgboost_model = xgb.XGBClassifier(max_depth=3, learning_rate=0.1, n_estimators=100, objective='binary:logistic')
+
+# 进行十折交叉验证，返回十个验证准确率的数组
+cross_val_scores = cross_val_score(xgboost_model, X_train, y_train, cv=10)
+
+# 定义 X 轴的数据，即交叉验证的折数
+x_values = range(1, 11)
+
+# 绘制折线图
+plt.figure(figsize=(8, 6))
+plt.plot(x_values, cross_val_scores, marker='o', linestyle='-')
+plt.xlabel('Fold')
+plt.ylabel('Accuracy')
+plt.title('Cross Validation Scores')
+plt.xticks(x_values)
+plt.grid(True)
+plt.show()
+print("这十次的准确率分别是：\n",cross_val_scores)
+print("这十次的准确率的均值是：\n",cross_val_scores.mean())
+# 选一个表现较好的模型，作为最终的模型并预测
+#训练一个机器学习模型，我们最终想要得到两个东西：
+# 1.训练好的机器学习模型
+# 2.在不知道标签的数据上，预测出标签。
+
+
+# 这里我们没有真正的不知道标签的数据，但是我们假设测试集X_test的标签y_test是未知的，
+# 用训练好的表现最好的机器学习模型对这部分数据进行预测，作为我们的结果。
+
+## 预测结果
+from sklearn.ensemble import RandomForestClassifier
+
+# 定义随机森林模型
+random_forest_model = RandomForestClassifier(n_estimators=100)
+
+# 在训练集上训练随机森林模型
+random_forest_model.fit(X_train, y_train)
+
+# 在测试集上进行预测
+random_forest_y_pred = random_forest_model.predict(X_test)
+
+# 计算随机森林模型的准确率
+random_forest_accuracy = accuracy_score(y_test, random_forest_y_pred)
+print("随机森林模型准确率：", random_forest_accuracy)
+print("\n随机森林分类报告：")
+print(classification_report(y_test, random_forest_y_pred))
+print("标准答案是",y_test.values)
+print("最后在测试集上的预测结果是",random_forest_y_pred)
+
+#可以看出，预测结果和标准答案一模一样，准确率达到了100%。
+## 保存模型
+# 保存模型到文件
+import joblib
+
+# joblib 这个Python 库，用于储存数据，特别是涉及大量数据的机器学习模型。
+joblib.dump(random_forest_model, 'random_forest_model.joblib')
+# 把模型保存为一个名为random_forest_model.joblib的文件,就在这个文件夹下
+
+# ”random_forest_model.joblib“这个文件中保存的是机器学习模型的属性和参数。
+# 比如模型的结构、学习到的参数（例如，决策树的结构、支持向量机的支持向量等）
+
+## 重新读取训练好的模型
+random_forest_model = joblib.load('random_forest_model.joblib')
+
+# 使用加载的模型进行预测
+loaded_rf_y_pred = random_forest_model.predict(X_test)
+
+# 计算加载的模型准确率
+loaded_rf_y_pred_accuracy = accuracy_score(y_test, loaded_rf_y_pred)
+print("加载的随机森林模型准确率：", loaded_rf_y_pred_accuracy)
+
+# 数据标准化及效果对比
+## 什么是数据标准化
+# 数据标准化/归一化是一种数据预处理方法。
+# 数据标准化/归一化将数据调整为一定的范围
+# 一般有两种：
+# 1.缩到0到1之间（归一化）
+# 2.让数据的均值为0，方差为1（标准化）
+
+## 为什么要数据标准化
+#标准化的目的是消除数据中的单位尺度差异，使得特征之间可以公平比较，同时也能加快某些算法的收敛速度。
+## 什么机器学习算法，对数据标准化比较敏感
+# 不是所有的机器学习方法对数据是否标准化都敏感。
+# 比如，从上面的结果可以看出，基于树的算法（如决策树、随机森林和梯度提升机），在没有进行数据标准化的情况下，表现依旧很好。
+# 这是因为，这些算法在做决策时主要考虑数据点的排序或分类而不是具体数值。
+
+# 那么什么机器学习算法，对数据是否标准化比较敏感呢？
+# 总的来说，以下两类机器学习方法对数据是否标准化比较敏感。
+# 1.基于梯度的方法，如神经网络。
+# 2.基于距离的算法：如K-近邻（KNN）、支持向量机（SVM）。
+
+# 为什么这两类算法对数据是否标准化敏感呢？
+# 因为这两类算法对数据的尺度和分布非常敏感。
+# 所以，这两类算法在数据标准化后，效果可能会有很大的提升。
+
+# 从上面的代码中，我们可以看到，KNN和SVM的效果相较于决策树，并不好。
+# 下面我将以SVM模型为例，展示，数据标准化后，SVM的效果会有很大的提升。
+# 大家也可以试试，其他模型，在数据标准化后的效果。
+
+
+## 数据标准化后的模型效果前后对比
+### 数据标准化
+# 通常使用Sklearn库中的StandardScaler对数据进行标准化(不用自己写公式的代码)
+from sklearn.preprocessing import StandardScaler
+
+# 初始化StandardScaler对象
+scaler = StandardScaler()
+
+# 用训练数据拟合scaler
+scaler.fit(X_train)
+
+# 转换训练集和测试集
+X_train_scaled = scaler.transform(X_train)
+X_test_scaled = scaler.transform(X_test)
+
+#查看原来的数据
+X_train
+#查看标准化后的数据，可以看到，数据变成了均值为0，方差为1的数据
+X_train_scaled
+### 数据标准化后，SVM的效果
+from sklearn.svm import SVC
+
+
+svm_model = SVC(C=1, kernel='rbf')
+
+# 在训练集上训练支持向量机模型
+#注意，这里我已经把数据换成了标准化后的数据，X_train_scaled，而不是原来的X_train
+svm_model.fit(X_train_scaled, y_train)
+
+# 用刚才训练好的名字叫svm_model的svm模型，在测试集上进行预测
+# 注意，这里我已经把测试数据换成了标准化后的数据，X_test_scaled，而不是原来的X_test
+svm_y_pred = svm_model.predict(X_test_scaled)
+
+svm_accuracy = accuracy_score(y_test, svm_y_pred)
+print("\n数据标准化后的支持向量机模型准确率：", svm_accuracy)
+print("\n数据标准化后的支持向量机分类报告：")
+print(classification_report(y_test, svm_y_pred))
+from sklearn.model_selection import cross_val_score
+import matplotlib.pyplot as plt
+
+# 定义 svm 模型
+svm_model = SVC(C=1, kernel='rbf')
+
+# 进行十折交叉验证，返回十个验证准确率的数组
+cross_val_scores = cross_val_score(svm_model, X_train_scaled, y_train, cv=10)
+
+# 定义 X 轴的数据，即交叉验证的折数
+x_values = range(1, 11)
+
+# 绘制折线图
+plt.figure(figsize=(8, 6))
+plt.plot(x_values, cross_val_scores, marker='o', linestyle='-')
+plt.xlabel('Fold')
+plt.ylabel('Accuracy')
+plt.title('Cross Validation Scores')
+plt.xticks(x_values)
+plt.grid(True)
+plt.show()
+print("这十次的准确率分别是：\n",cross_val_scores)
+print("这十次的准确率的均值是：\n",cross_val_scores.mean())
+
+## 可以看到，模型效果提升了非常多
+### 让我们回忆一下，数据标准化之前SVM模型的效果
+from sklearn.svm import SVC
+
+
+svm_model = SVC(C=1, kernel='rbf')
+
+# 在训练集上训练支持向量机模型
+#注意，这里我已经是原来的X_train
+svm_model.fit(X_train, y_train)
+
+# 用刚才训练好的名字叫svm_model的svm模型，在测试集上进行预测
+svm_y_pred = svm_model.predict(X_test)
+
+svm_accuracy = accuracy_score(y_test, svm_y_pred)
+print("\n未进行数据标准化的支持向量机模型准确率：", svm_accuracy)
+print("\n未进行数据标准化的支持向量机分类报告：")
+print(classification_report(y_test, svm_y_pred))
